@@ -1,15 +1,9 @@
-#!/bin/bash
+ #!/bin/bash
 
 
 ################################################################################################################################################
 #### SPECIAL FOR ALMALINUX 8 #### --------------------------------------------------------------------------------------------------- ##_2024_##
 ################################################################################################################################################
-
-# Wait for systemd to be active
-while ! systemctl is-active --quiet systemd; do
-    echo "Waiting for systemd..."
-    sleep 1
-done
 
 ################################################################################################################################################
 #### INSTALL SOME DEPENDENCIES:) #### -------------------------------------------------------------------------------------------------- #######
@@ -21,29 +15,35 @@ done
 /usr/bin/crb enable 
 
 yum -y install epel-release
-yum -y install terminator
-yum -y install expect
-yum -y install curl
-yum -y install wget
-yum -y install git
-yum -y install jq
+yum -y install terminator expect curl wget git jq
 
-sudo timedatectl set-timezone Europe/Paris
+# Set timezone without relying on D-Bus
+echo "Setting timezone to Europe/Paris..."
+sudo ln -sf /usr/share/zoneinfo/Europe/Paris /etc/localtime
+
+# Ensure systemd-timesyncd is active for time sync
+if systemctl is-active --quiet systemd-timesyncd; then
+    echo "systemd-timesyncd is active."
+else
+    echo "Starting systemd-timesyncd..."
+    sudo systemctl start systemd-timesyncd
+    sudo systemctl enable systemd-timesyncd
+fi
 
 ################################################################################################################################################
 #### CHANGE SSH PORT TO 4477 AND SET HOSTNAME #### ------------------------------------------------------------------------------------- #######
 ################################################################################################################################################
 
-NEW_SSH_PORT=4477
+NEW_SSH_PORT=22
 
 cp /etc/ssh/sshd_config /etc/ssh/sshd_config_backup
 sed -i "s/#Port 22/Port $NEW_SSH_PORT/g" /etc/ssh/sshd_config
 
-# Wait for firewalld to be active
-while ! systemctl is-active --quiet firewalld; do
-    echo "Waiting for firewalld to start..."
-    sleep 1
-done
+# Start and enable firewalld before using firewall-cmd
+echo "Starting and enabling firewalld..."
+sudo systemctl start firewalld
+sudo systemctl enable firewalld
+
 
 firewall-cmd --zone=public --add-port=$NEW_SSH_PORT/tcp --permanent
 firewall-cmd --reload
