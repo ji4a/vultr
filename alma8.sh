@@ -17,43 +17,10 @@
 yum -y install epel-release
 yum -y install terminator expect curl wget git jq
 
-# Set timezone without relying on D-Bus
-echo "Setting timezone to Europe/Paris..."
-sudo ln -sf /usr/share/zoneinfo/Europe/Paris /etc/localtime
-
-# Ensure systemd-timesyncd is active for time sync
-if systemctl is-active --quiet systemd-timesyncd; then
-    echo "systemd-timesyncd is active."
-else
-    echo "Starting systemd-timesyncd..."
-    sudo systemctl start systemd-timesyncd
-    sudo systemctl enable systemd-timesyncd
-fi
-
 ################################################################################################################################################
 #### CHANGE SSH PORT TO 4477 AND SET HOSTNAME #### ------------------------------------------------------------------------------------- #######
 ################################################################################################################################################
 
-NEW_SSH_PORT=22
-
-cp /etc/ssh/sshd_config /etc/ssh/sshd_config_backup
-sed -i "s/#Port 22/Port $NEW_SSH_PORT/g" /etc/ssh/sshd_config
-
-# Start and enable firewalld before using firewall-cmd
-echo "Starting and enabling firewalld..."
-sudo systemctl start firewalld
-sudo systemctl enable firewalld
-
-
-firewall-cmd --zone=public --add-port=$NEW_SSH_PORT/tcp --permanent
-firewall-cmd --reload
-
-service firewalld restart
-
-####### SET HOSTNAME #######
-SERVER_IP=$(hostname -I | awk '{print $1}')
-sudo hostnamectl set-hostname ${SERVER_IP}.myworld.com
-sudo systemctl restart systemd-hostnamed
 
 ################################################################################################################################################
 #### INSTALL VNC SERVER #### ----------------------------------------------------------------------------------------------------------- #######
