@@ -41,9 +41,6 @@ END
 
 echo "$content" > ~/.vnc/config
 
-# Configure the firewall to allow VNC
-sudo firewall-cmd --add-service=vnc-server --permanent
-sudo firewall-cmd --reload
 
 # Create a new user 'admin' with a predefined password
 sudo adduser admin
